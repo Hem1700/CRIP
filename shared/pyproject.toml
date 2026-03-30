@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.backends.build"
+
+[project]
+name = "crip-shared"
+version = "0.1.0"
+description = "Shared schemas and utilities for the CRIP platform"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0",
+    "neo4j>=5.0",
+    "fastapi>=0.115",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.10",
+    "ruff>=0.5",
+]

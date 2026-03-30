@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  neo4j:
+    image: neo4j:5.15
+    container_name: crip-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/crip-local
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_dbms_security_procedures_allowlist: apoc.*
+    volumes:
+      - neo4j_data:/data
+      - neo4j_plugins:/plugins
+    networks:
+      - crip-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: crip-dynamodb
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    networks:
+      - crip-network
+
+  localstack:
+    image: localstack/localstack
+    container_name: crip-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,sqs,events
+      DEFAULT_REGION: us-east-1
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - crip-network
+
+volumes:
+  neo4j_data:
+  neo4j_plugins:
+  dynamodb_data:
+  localstack_data:
+
+networks:
+  crip-network:
+    driver: bridge
