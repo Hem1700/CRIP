@@ -110,6 +110,9 @@ export interface SimulationResult {
   personaName: string
   status: string
   result: {
+    personaName: string
+    personaId: string
+    tenantId: string
     totalAssetsScanned: number
     vulnerableAssets: number
     attackPaths: AttackStep[][]

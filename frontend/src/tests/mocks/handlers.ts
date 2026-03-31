@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { FindingsData, HeatmapData, PostureData, SimulationResult } from '../../types'
+import type { FindingsData, HeatmapData, Persona, PostureData, SimulationResult } from '../../types'
 
 const POSTURE: PostureData = {
   riskScore: 742,
@@ -30,7 +30,7 @@ const FINDINGS: FindingsData = {
   pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
 }
 
-const PERSONA = {
+const PERSONA: Persona = {
   groupId: 'G0016',
   name: 'APT29 (Cozy Bear)',
   origin: 'Russia',
@@ -50,6 +50,9 @@ const SIMULATION: SimulationResult = {
   personaName: 'APT29 (Cozy Bear)',
   status: 'completed',
   result: {
+    personaName: 'APT29 (Cozy Bear)',
+    personaId: 'G0016',
+    tenantId: 'demo-tenant',
     totalAssetsScanned: 128,
     vulnerableAssets: 42,
     attackPaths: [[{
