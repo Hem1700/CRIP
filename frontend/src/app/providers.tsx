@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect, type ReactNode } from 'react'
+import { useLayoutEffect, type ReactNode } from 'react'
 import { useThemeStore } from '../store/themeStore'
 
 const queryClient = new QueryClient({
@@ -10,7 +10,7 @@ const queryClient = new QueryClient({
 
 function ThemeApplier() {
   const theme = useThemeStore((s) => s.theme)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark')
     } else {
