@@ -22,6 +22,7 @@ export class AnalystWsClient {
   ) {}
 
   connect(sessionId: string): void {
+    this.ws?.close()
     const url = `${WS_BASE}/ws/analyst?tenantId=${encodeURIComponent(TENANT_ID)}&sessionId=${encodeURIComponent(sessionId)}`
     this.ws = new WebSocket(url)
 
