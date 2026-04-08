@@ -47,7 +47,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        # Skip tenant check for health and docs endpoints
+        # Skip tenant check for CORS preflight and health/docs endpoints
+        if request.method == "OPTIONS":
+            return await call_next(request)
         if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
