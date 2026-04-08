@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "crip-local"
     NEO4J_DATABASE: str = "neo4j"
 
-    DYNAMODB_ENDPOINT: str = "http://localhost:8000"
+    DYNAMODB_ENDPOINT: str = "http://localhost:8080"
     S3_ENDPOINT: str = "http://localhost:4566"
     S3_BUCKET_REPORTS: str = "crip-reports"
 

@@ -27,7 +27,7 @@ services:
     image: amazon/dynamodb-local:latest
     container_name: crip-dynamodb
     ports:
-      - "8000:8000"
+      - "8080:8000"
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
     volumes:
       - dynamodb_data:/home/dynamodblocal/data
@@ -35,7 +35,7 @@ services:
       - crip-network
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:3
     container_name: crip-localstack
     ports:
       - "4566:4566"

@@ -21,6 +21,8 @@ def _get_s3_client():
         "s3",
         region_name="us-east-1",
         endpoint_url=settings.S3_ENDPOINT,
+        aws_access_key_id="local",
+        aws_secret_access_key="local",
     )
 
 
@@ -30,6 +32,8 @@ def _get_reports_table(table_name: str = "crip-reports"):
         "dynamodb",
         region_name="us-east-1",
         endpoint_url=settings.DYNAMODB_ENDPOINT,
+        aws_access_key_id="local",
+        aws_secret_access_key="local",
     )
     table = dynamodb.Table(table_name)
     try:

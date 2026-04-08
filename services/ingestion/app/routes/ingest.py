@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
-import boto3
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from crip_shared.schemas import IngestionJob
 
-from app.config import settings
 from app.connectors.mock import MockConnector
 from app.graph.upsert import link_asset_vulnerability, upsert_asset, upsert_vulnerability
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
 
@@ -21,26 +22,21 @@ CONNECTOR_REGISTRY: dict[str, type] = {
     "mock": MockConnector,
 }
 
+# In-memory job store for local dev (replaces DynamoDB when unavailable)
+_job_store: dict[str, dict] = {}
 
-def _get_dynamodb_table(table_name: str = "crip-ingestion-jobs"):
-    """Return a DynamoDB Table resource, using the local endpoint in dev."""
-    dynamodb = boto3.resource(
-        "dynamodb",
-        region_name=settings.AWS_REGION,
-        endpoint_url=settings.DYNAMODB_ENDPOINT,
-    )
-    table = dynamodb.Table(table_name)
-    # Ensure table exists (local dev only — in prod, CDK creates this)
-    try:
-        table.table_status  # noqa: B018  — triggers DescribeTable
-    except dynamodb.meta.client.exceptions.ResourceNotFoundException:
-        dynamodb.create_table(
-            TableName=table_name,
-            KeySchema=[{"AttributeName": "jobId", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "jobId", "AttributeType": "S"}],
-            BillingMode="PAY_PER_REQUEST",
-        )
-    return table
+
+def _save_job(job_id: str, data: dict) -> None:
+    _job_store[job_id] = data
+
+
+def _update_job(job_id: str, updates: dict) -> None:
+    if job_id in _job_store:
+        _job_store[job_id].update(updates)
+
+
+def _get_job(job_id: str) -> dict | None:
+    return _job_store.get(job_id)
 
 
 class TriggerRequest(BaseModel):
@@ -65,20 +61,11 @@ async def trigger_ingestion(body: TriggerRequest, request: Request) -> dict:
     job_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
 
-    job = IngestionJob(
-        jobId=job_id,
-        tenantId=body.tenant_id,
-        connectorType=body.connector_type,
-        status="running",
-        startedAt=now,
-    )
-
-    table = _get_dynamodb_table()
-    table.put_item(Item={
-        "jobId": job.job_id,
-        "tenantId": job.tenant_id,
-        "connectorType": job.connector_type,
-        "status": job.status,
+    _save_job(job_id, {
+        "jobId": job_id,
+        "tenantId": body.tenant_id,
+        "connectorType": body.connector_type,
+        "status": "running",
         "startedAt": now.isoformat(),
         "assetCount": 0,
         "errorCount": 0,
@@ -110,23 +97,20 @@ async def trigger_ingestion(body: TriggerRequest, request: Request) -> dict:
                 await link_asset_vulnerability(graph, body.tenant_id, asset.asset_id, vuln.cve_id)
 
         status = "completed"
+        logger.info("Ingestion completed: %d assets ingested", asset_count)
     except Exception as exc:
+        logger.exception("Ingestion failed: %s", exc)
         error_list.append(str(exc))
         status = "failed"
 
     completed_at = datetime.now(timezone.utc)
-    table.update_item(
-        Key={"jobId": job_id},
-        UpdateExpression="SET #s = :status, completedAt = :completed, assetCount = :ac, errorCount = :ec, errors = :errs",
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={
-            ":status": status,
-            ":completed": completed_at.isoformat(),
-            ":ac": asset_count,
-            ":ec": len(error_list),
-            ":errs": error_list,
-        },
-    )
+    _update_job(job_id, {
+        "status": status,
+        "completedAt": completed_at.isoformat(),
+        "assetCount": asset_count,
+        "errorCount": len(error_list),
+        "errors": error_list,
+    })
 
     return {
         "jobId": job_id,
@@ -139,9 +123,7 @@ async def trigger_ingestion(body: TriggerRequest, request: Request) -> dict:
 @router.get("/status/{job_id}")
 async def get_job_status(job_id: str) -> dict:
     """Return the status of an ingestion job."""
-    table = _get_dynamodb_table()
-    response = table.get_item(Key={"jobId": job_id})
-    item = response.get("Item")
+    item = _get_job(job_id)
     if not item:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     return item

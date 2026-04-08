@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
 
     AWS_REGION: str = "us-east-1"
-    DYNAMODB_ENDPOINT: str = "http://localhost:8000"
+    DYNAMODB_ENDPOINT: str = "http://localhost:8080"
     S3_ENDPOINT: str = "http://localhost:4566"
 
     LOG_LEVEL: str = "INFO"

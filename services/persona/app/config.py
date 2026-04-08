@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
 
     ANTHROPIC_API_KEY: str = ""
-    DYNAMODB_ENDPOINT: str = "http://localhost:8000"
+    DYNAMODB_ENDPOINT: str = "http://localhost:8080"
     CONFIDENCE_THRESHOLD: float = 0.85
 
     LOG_LEVEL: str = "INFO"

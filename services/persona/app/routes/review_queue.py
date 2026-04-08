@@ -19,6 +19,8 @@ def _get_review_table(table_name: str = "crip-review-queue"):
         "dynamodb",
         region_name="us-east-1",
         endpoint_url=settings.DYNAMODB_ENDPOINT,
+        aws_access_key_id="local",
+        aws_secret_access_key="local",
     )
     table = dynamodb.Table(table_name)
     try:
